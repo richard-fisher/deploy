@@ -43,6 +43,7 @@ usage() {
     console              open an ssh session to the host
     list                 list previous deploy commits
     [ref]                deploy to [ref], the 'ref' setting, or latest tag
+    puma                 use pumactl to control puma, commands include start|stop|restart|phased-restart
 
 EOF
 }
@@ -252,6 +253,16 @@ deploy() {
 }
 
 #
+# Start/Stop Puma.
+#
+
+puma() {
+  local path=`config_get path`
+  run "cd $path/current && \
+      pumactl -F config/puma/$ENV.rb $1 -d"
+}
+
+#
 # Get current commit.
 #
 
@@ -356,6 +367,7 @@ while test $# -ne 0; do
     list) require_env; list_deploys; exit ;;
     update) update; exit ;;
     config) config $@; exit ;;
+    puma) puma $@; exit ;;
     *)
       if test -z "$ENV"; then
         ENV=$arg;
