@@ -4,10 +4,10 @@
 # deploy(1) - Minimalistic shell script to deploy Git repositories.
 # Released under the MIT License.
 #
-# https://github.com/visionmedia/deploy
+# https://github.com/richard-fisher/deploy
 #
 
-VERSION="0.6.1"
+VERSION="0.6.2"
 CONFIG=./deploy.conf
 LOG=/tmp/deploy.log
 TEST=1
@@ -265,7 +265,7 @@ deploy() {
 puma() {
   local path=`config_get path`
   run "cd $path/current && \
-      bundle exec pumactl -F config/puma/$ENV.rb $1 -d"
+      RACK_ENV=$ENV bundle exec pumactl -F config/puma/$ENV.rb $1 -d"
 }
 
 #
