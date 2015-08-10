@@ -7,7 +7,7 @@
 # https://github.com/visionmedia/deploy
 #
 
-VERSION="0.6.0"
+VERSION="0.6.1"
 CONFIG=./deploy.conf
 LOG=/tmp/deploy.log
 TEST=1
@@ -110,7 +110,6 @@ version() {
 #
 
 ssh_command() {
-  local url="`config_get user`@`config_get host`"
   local key="`config_get key`"
   local forward_agent="`config_get forward-agent`"
   local port="`config_get port`"
@@ -120,7 +119,7 @@ ssh_command() {
   test -n "$key" && local identity="-i $key"
   test -n "$port" && local port="-p $port"
   test -n "$needs_tty" && local tty="-t"
-  echo "ssh $tty $agent $port $identity $url"
+  echo "ssh $tty $agent $port $identity"
 }
 
 #
@@ -129,8 +128,14 @@ ssh_command() {
 
 run() {
   local shell="`ssh_command`"
-  echo $shell "\"$@\"" >> $LOG
-  $shell $@
+  local string=`config_get host`
+  local hosts=(${string//,/ })
+  for host in "${hosts[@]}"
+  do
+    local url="`config_get user`@$host"
+    log $shell $url "\"$@\""
+    $shell $url "$@"
+  done
 }
 
 #
@@ -260,7 +265,7 @@ deploy() {
 puma() {
   local path=`config_get path`
   run "cd $path/current && \
-      pumactl -F config/puma/$ENV.rb $1 -d"
+      bundle exec pumactl -F config/puma/$ENV.rb $1 -d"
 }
 
 #
@@ -340,7 +345,7 @@ check_for_local_changes() {
 update() {
   log "updating deploy(1)"
   rm -fr /tmp/deploy
-  git clone git://github.com/visionmedia/deploy.git \
+  git clone git://github.com/richard-fisher/deploy.git \
     --depth 0 \
     /tmp/deploy \
     &> /tmp/deploy.log \
