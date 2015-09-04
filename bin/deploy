@@ -7,7 +7,7 @@
 # https://github.com/richard-fisher/deploy
 #
 
-VERSION="0.6.2"
+VERSION="0.7"
 CONFIG=./deploy.conf
 LOG=/tmp/deploy.log
 TEST=1
@@ -44,6 +44,7 @@ usage() {
     list                 list previous deploy commits
     [ref]                deploy to [ref], the 'ref' setting, or latest tag
     puma                 use pumactl to control puma, commands include start|stop|restart|phased-restart
+    backburner           start|stop the backburner queue process
 
 EOF
 }
@@ -269,6 +270,21 @@ puma() {
 }
 
 #
+# Start/Stop Backburner.
+#
+
+backburner() {
+  local path=`config_get path`
+  if [ "$1" == "start" ]; then
+    run "cd $path/current && \
+        RACK_ENV=$ENV bundle exec backburner -r run.rb -P /opt/app/$ENV/api/shared/tmp/pids/backburner.pid -l /opt/app/$ENV/api/shared/log/server.log -d"
+  elif [ "$1" == "stop" ]; then
+    run "cd $path/current && \
+        RACK_ENV=$ENV bundle exec backburner -k -P /opt/app/$ENV/api/shared/tmp/pids/backburner.pid -l /opt/app/$ENV/api/shared/log/server.log"
+  fi
+}
+
+#
 # Get current commit.
 #
 
@@ -374,6 +390,7 @@ while test $# -ne 0; do
     update) update; exit ;;
     config) config $@; exit ;;
     puma) puma $@; exit ;;
+    backburner) backburner $@; exit ;;
     *)
       if test -z "$ENV"; then
         ENV=$arg;
